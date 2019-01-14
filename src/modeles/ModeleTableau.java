@@ -3,7 +3,6 @@ package modeles;
 import main.Capteur;
 import main.TypeFluide;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.table.AbstractTableModel;
@@ -11,12 +10,10 @@ import javax.swing.table.AbstractTableModel;
 public class ModeleTableau extends AbstractTableModel {
 
     private static final long serialVersionUID = 1L;
-    private List<Capteur> list;
     private List<Capteur> capteurs;
 
     public ModeleTableau(List<Capteur> capteur) {
-        this.list=capteur;
-        this.capteurs = new ArrayList<>(list);
+        this.capteurs=capteur;
     }
 
     @Override
@@ -79,52 +76,18 @@ public class ModeleTableau extends AbstractTableModel {
     public void add(Capteur capteur){
         int index = capteurs.size();
         capteurs.add(capteur);
-        list.add(capteur);
         fireTableRowsInserted(index, index);
     }
 
     public void remove(Capteur capteur){
         int index = capteurs.indexOf(capteur);
         capteurs.remove(capteur);
-        list.remove(capteur);
         fireTableRowsDeleted(index, index);
     }
 
     public void update(Capteur capteur){
         int index = capteurs.indexOf(capteur);
-        if (index != -1) {
-            Capteur toSet = capteurs.get(index);
-            toSet.update(capteur.getValeurCourante());
-            toSet.setSeuilMin(capteur.getSeuilMin());
-            toSet.setSeuilMax(capteur.getSeuilMax());
-            fireTableRowsUpdated(index, index);
-        }
-    }
-
-    public void filtrer(TypeFluide type, String batiment){
-        List<Capteur> newList = new ArrayList<>();
-        int indexDeleted = capteurs.size()-1;
-        if (type == null)   newList.addAll(list);
-        else{
-            for (Capteur capteur : list){
-                if (type.equals(capteur.getType())){
-                    newList.add(capteur);
-                }
-            }
-        }
-        List<Capteur> finalList = new ArrayList<>();
-        if (batiment == null)   finalList.addAll(newList);
-        else{
-            for (Capteur capteur : newList){
-                if (batiment.equals(capteur.getBatiment())){
-                    finalList.add(capteur);
-                }
-            }
-        }
-        capteurs = finalList;
-        int indexAdded = capteurs.size()-1;
-        fireTableRowsDeleted(0, indexDeleted);
-        fireTableRowsInserted(0, indexAdded);
+        fireTableRowsUpdated(index, index);
     }
 
 }

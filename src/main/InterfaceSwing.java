@@ -34,17 +34,9 @@ public class InterfaceSwing extends Thread {
     private static JSplitPane tableTree = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 
     /* Partie tableau temps reel */
-    private static JSplitPane splitTableau;
-    private static JPanel panelFiltres;
     private static JScrollPane panelTableau;
     private static JTable table;
     private static ModeleTableau tableModel;
-    private static JComboBox<String> filtreType;
-    private static JComboBox<String> filtreBatiment;
-    private static JButton submitFiltres = new JButton("Appliquer");
-    private static JButton resetFiltres = new JButton("Reinitialiser");
-    private static TypeFluide typeChoisi = null;
-    private static String batimentChoisi = null;
 
     /* Partie arbre gestion */
     private static JSplitPane treePane;
@@ -64,6 +56,7 @@ public class InterfaceSwing extends Thread {
     private static JButton submitSeuils = new JButton("Modifier");
     private static JButton resetSeuils = new JButton("Reinitialiser");
     private static Capteur selected;
+    //TODO: update tree properly
 
     /* Partie courbes */
     private static JSplitPane courbesGestionPanel;
@@ -105,14 +98,14 @@ public class InterfaceSwing extends Thread {
         buildTablePanel();
         buildCourbesGestionPanel();
 
-        tableTree.setLeftComponent(treePane);
-        tableTree.setRightComponent(splitTableau);
         tableTree.setDividerSize(5);
+        tableTree.setLeftComponent(treePane);
+        tableTree.setRightComponent(panelTableau);
+        layout.setDividerSize(5);
         layout.setTopComponent(tableTree);
         layout.setBottomComponent(courbesGestionPanel);
-        layout.setDividerSize(5);
         fenetre.add(layout);
-        fenetre.pack();
+        fenetre.setSize(1000, 800);
 
         fenetre.addWindowListener(
                 new WindowAdapter() {
@@ -484,60 +477,6 @@ public class InterfaceSwing extends Thread {
     }
 
     private static void buildTablePanel(){
-        //Set comboboxes
-        filtreType = new JComboBox<>();
-        filtreBatiment = new JComboBox<>();
-        filtreType.addItem("Type");
-        for (TypeFluide type : TypeFluide.values()){
-            filtreType.addItem(type.toString());
-        }
-        resetLieuxFiltres();
-
-
-        filtreType.setSize(filtreType.getWidth(), submitCourbes.getHeight());
-        filtreBatiment.setSize(filtreBatiment.getWidth(), submitCourbes.getHeight());
-        submitFiltres.setPreferredSize(filtreType.getSize());
-        resetFiltres.setPreferredSize(filtreType.getSize());
-
-        //add to layout
-        panelFiltres = new JPanel();
-        JPanel centerBox = new JPanel();
-        GroupLayout layoutFiltres = new GroupLayout(centerBox);
-        centerBox.setLayout(layoutFiltres);
-
-        GroupLayout.SequentialGroup hGroup = layoutFiltres.createSequentialGroup();
-        hGroup.addGroup(layoutFiltres.createParallelGroup()
-                .addComponent(filtreType)
-                .addComponent(submitFiltres)
-        );
-        hGroup.addGroup(layoutFiltres.createParallelGroup()
-                .addComponent(filtreBatiment)
-                .addComponent(resetFiltres)
-        );
-
-        layoutFiltres.setHorizontalGroup(hGroup);
-
-        GroupLayout.SequentialGroup vGroup = layoutFiltres.createSequentialGroup();
-        vGroup.addGroup(layoutFiltres.createParallelGroup()
-                .addComponent(filtreType)
-                .addComponent(filtreBatiment)
-        );
-
-        vGroup.addGroup(layoutFiltres.createParallelGroup()
-                .addComponent(submitFiltres)
-                .addComponent(resetFiltres)
-        );
-
-        layoutFiltres.setVerticalGroup(vGroup);
-
-
-        //Set components position
-        panelFiltres.setLayout(new BoxLayout(panelFiltres, BoxLayout.X_AXIS));
-        panelFiltres.add(Box.createHorizontalGlue());
-        panelFiltres.add(centerBox);
-        panelFiltres.add(Box.createHorizontalGlue());
-
-        //set table
         tableModel = new ModeleTableau(new ArrayList<>());
         table = new JTable(tableModel);
         panelTableau = new JScrollPane(table);
@@ -546,60 +485,18 @@ public class InterfaceSwing extends Thread {
             modeleColonne.getColumn(i).setCellRenderer(new CellRenderer());
         }
         JTableHeader header = new JTableHeader(modeleColonne);
-        header.setReorderingAllowed(false);
         table.setTableHeader(header);
-
-        //set splitpane
-        splitTableau = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-        splitTableau.setTopComponent(panelFiltres);
-        splitTableau.setBottomComponent(panelTableau);
-        splitTableau.setDividerLocation(submitCourbes.getHeight()*2);
-        splitTableau.setDividerSize(0);
-
-        //set actions
-        filtreType.addActionListener(
-                l -> {
-                    if (filtreType.getSelectedIndex() == 0){
-                        typeChoisi = null;
-                    }else{
-                        typeChoisi = TypeFluide.valueOf(filtreType.getSelectedItem().toString());
-                    }
-                    resetLieuxFiltres();
-                }
-        );
-
-        filtreBatiment.addActionListener(
-                l -> {
-                    if (filtreBatiment.getItemCount() == 0 || filtreBatiment.getSelectedIndex() == 0){
-                        batimentChoisi = null;
-                    }else{
-                        batimentChoisi = filtreBatiment.getSelectedItem().toString();
-                    }
-                }
-        );
-
-        submitFiltres.addActionListener(
-                l -> tableModel.filtrer(typeChoisi, batimentChoisi)
-        );
-
-        resetFiltres.addActionListener(
-                l -> tableModel.filtrer(null, null)
-        );
     }
 
     public static void addCapteur(Capteur capteur){
-        if (list.contains(capteur)){
-            keyList.get(capteur.getNom()).connect();
-        }else {
-            addCapteurMemory(capteur);
-            DatabaseManager.addCapteur(capteur);
-        }
-        tableModel.add(capteur);
+        addCapteurMemory(capteur);
+        DatabaseManager.addCapteur(capteur);
     }
 
     public static void addCapteurMemory(Capteur capteur){
         list.add(capteur);
         keyList.put(capteur.getNom(), capteur);
+        tableModel.add(capteur);
         setModeleArbre();
     }
 
@@ -609,28 +506,6 @@ public class InterfaceSwing extends Thread {
 
     public static void capteurUpdate(Capteur capteur){
         tableModel.update(capteur);
-    }
-
-    public static void resetLieuxFiltres(){
-        if (filtreBatiment.getItemCount() != 0) {
-            filtreBatiment.removeAllItems();
-        }
-        filtreBatiment.addItem("Localisation");
-        NavigableSet<String> lieux = new TreeSet<>();
-        for (Capteur capteur : list){
-            if (typeChoisi == null) {
-                if (capteur.estConnect()) {
-                    lieux.add(capteur.getBatiment());
-                }
-            }else{
-                if (capteur.estConnect() && typeChoisi == capteur.getType()){
-                    lieux.add(capteur.getBatiment());
-                }
-            }
-        }
-        for (String s : lieux){
-            filtreBatiment.addItem(s);
-        }
     }
 
     /**

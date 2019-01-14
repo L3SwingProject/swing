@@ -64,14 +64,7 @@ public class Serveur extends Thread {
                             socket.close();
                             Capteur toDel = keyList.get(infos[1]);
                             toDel.deconnexion();
-                            Lock ld = new ReentrantLock();
-                            ld.lock();
-                            try{
-                                InterfaceSwing.removeCapteurFromTable(toDel);
-                                //InterfaceSwing.resetLieuxFiltres();
-                            }finally{
-                                ld.unlock();
-                            }
+                            InterfaceSwing.removeCapteurFromTable(toDel);
                             return;
                         case "Connexion":
                             badFormat = 0;
@@ -88,7 +81,6 @@ public class Serveur extends Thread {
                             lc.lock();       //lock mutex
                             try{
                                 InterfaceSwing.addCapteur(toAdd);
-                                //InterfaceSwing.resetLieuxFiltres();
                             }finally{
                                 lc.unlock(); //unlock mutex
                             }
@@ -98,14 +90,14 @@ public class Serveur extends Thread {
                             //TODO: check if it exceeds bounds
                             float newValue = Float.parseFloat(infos[2]);
                             Capteur toSet = keyList.get(infos[1]);
-                            Lock lv = new ReentrantLock();
-                            lv.lock();       //lock mutex
+                            Lock ld = new ReentrantLock();
+                            ld.lock();       //lock mutex
                             try{
                                 toSet.update(newValue);
                                 DatabaseManager.addValeur(newValue, keyList.get(infos[1]));
                                 InterfaceSwing.capteurUpdate(toSet);
                             }finally{
-                                lv.unlock(); //unlock mutex
+                                ld.unlock(); //unlock mutex
                             }
                             break;
                         default:

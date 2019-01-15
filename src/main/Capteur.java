@@ -157,4 +157,8 @@ public class Capteur implements Comparable<Capteur> {
     public boolean valeurExtSeuil() {
         return (valeurCourante<seuilMin || valeurCourante>seuilMax);
     }
+
+    public void connect(){
+        connecte = true;
+    }
 }

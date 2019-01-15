@@ -5,7 +5,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.*;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -16,7 +18,6 @@ public class Serveur extends Thread {
     private static NavigableSet<Capteur> list;
     private static NavigableMap<String, Capteur> keyList = new TreeMap<>();
     private int badFormat = 0;
-    final static int port = 8952;
     private static boolean isRunning = true;
     private static List<Serveur> serveurs = new ArrayList<>();
     private Socket socket;
@@ -25,15 +26,22 @@ public class Serveur extends Thread {
      * Fonction main du thread qui lance le serveur.
      * @param list - list of captors
      */
-    public static void listenSimul(NavigableSet<Capteur> list, NavigableMap<String, Capteur> keyList){
+    public static void listenSimul(NavigableSet<Capteur> list, NavigableMap<String, Capteur> keyList, int port){
         Serveur.list = list;
         Serveur.keyList = keyList;
         try{
             ServerSocket socketServeur = new ServerSocket(port);
+            socketServeur.setSoTimeout(1500);
             while(isRunning){
-                Socket socketClient = socketServeur.accept();
-                serveurs.add(new Serveur(socketClient));
-                serveurs.get(serveurs.size()-1).start();
+                try {
+                    Socket socketClient = socketServeur.accept();
+                    serveurs.add(new Serveur(socketClient));
+                    serveurs.get(serveurs.size() - 1).start();
+                }catch(SocketTimeoutException e){
+                    if (!isRunning){
+                        System.exit(0);
+                    }
+                }
             }
         }catch(IOException e){
             e.printStackTrace();
@@ -64,7 +72,13 @@ public class Serveur extends Thread {
                             socket.close();
                             Capteur toDel = keyList.get(infos[1]);
                             toDel.deconnexion();
-                            InterfaceSwing.removeCapteurFromTable(toDel);
+                            Lock lt = new ReentrantLock();
+                            lt.lock();
+                            try{
+                                InterfaceSwing.removeCapteurFromTable(toDel);
+                            }finally{
+                                lt.unlock();
+                            }
                             return;
                         case "Connexion":
                             badFormat = 0;
@@ -87,7 +101,6 @@ public class Serveur extends Thread {
                             break;
                         case "Donnee":
                             badFormat = 0;
-                            //TODO: check if it exceeds bounds
                             float newValue = Float.parseFloat(infos[2]);
                             Capteur toSet = keyList.get(infos[1]);
                             Lock ld = new ReentrantLock();
